@@ -216,6 +216,19 @@ libcompiler_rt_x86_64_SRC_FILES := \
   lib/builtins/x86_64/floatundisf.S \
   lib/builtins/x86_64/floatundidf.S
 
+# PPC-specific runtimes
+libcompiler_rt_ppc_SRC_FILES := \
+  lib/builtins/ppc/divtc3.c \
+  lib/builtins/ppc/fixtfdi.c \
+  lib/builtins/ppc/fixunstfdi.c \
+  lib/builtins/ppc/floatditf.c \
+  lib/builtins/ppc/floatunditf.c \
+  lib/builtins/ppc/gcc_qadd.c \
+  lib/builtins/ppc/gcc_qdiv.c \
+  lib/builtins/ppc/gcc_qmul.c \
+  lib/builtins/ppc/gcc_qsub.c \
+  lib/builtins/ppc/multc3.c
+
 # The following list contains functions that are not available in libgcc.a, so
 # we potentially need them when using a Clang-built component (e.g., -ftrapv
 # with 64-bit integer multiplies. See http://llvm.org/bugs/show_bug.cgi?id=14469.)
@@ -231,7 +244,8 @@ define get-libcompiler-rt-source-files
                  $(if $(findstring $(1),x32),$(call get-libcompiler-rt-x86-source-files),
                     $(if $(findstring $(1),arm64),$(call get-libcompiler-rt-arm64-source-files),
                        $(if $(findstring $(1),mips64),$(call get-libcompiler-rt-mips64-source-files),
-  $(error Unsupported ARCH $(1)))))))))
+                          $(if $(findstring $(1),ppc),$(call get-libcompiler-rt-ppc-source-files),
+  $(error Unsupported ARCH $(1))))))))))
 endef
 
 # $(1): source list
@@ -302,6 +316,12 @@ define get-libcompiler-rt-x86_64-source-files
       $(libcompiler_rt_x86_64_SRC_FILES),x86_64)
 endef
 
+define get-libcompiler-rt-ppc-source-files
+  $(call filter-libcompiler-rt-common-source-files,
+      $(libcompiler_rt_common_SRC_FILES) \
+      $(libcompiler_rt_ppc_SRC_FILES),ppc)
+endef
+
 #=====================================================================
 # Device Static Library: libcompiler_rt-extras
 #=====================================================================
@@ -350,7 +370,11 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := libcompiler_rt
 LOCAL_ASFLAGS := -integrated-as
 LOCAL_CLANG := true
+ifeq ($(HOST_ARCH),ppc)
+LOCAL_SRC_FILES := $(call get-libcompiler-rt-source-files,ppc)
+else
 LOCAL_SRC_FILES := $(call get-libcompiler-rt-source-files,x86_64)
+endif
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 LOCAL_MULTILIB := both
 

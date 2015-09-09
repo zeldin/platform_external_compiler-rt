@@ -17,7 +17,6 @@
 
 LOCAL_PATH := $(call my-dir)
 
-ifeq (,$(TARGET_BUILD_APPS))
 
 # The following list contains platform-independent functionalities.
 #
@@ -52,17 +51,17 @@ libcompiler_rt_common_SRC_FILES := \
   lib/builtins/divdc3.c \
   lib/builtins/divdf3.c \
   lib/builtins/divdi3.c \
-  lib/builtins/divtf3.c \
   lib/builtins/divmoddi4.c \
   lib/builtins/divmodsi4.c \
   lib/builtins/divsc3.c \
   lib/builtins/divsf3.c \
   lib/builtins/divsi3.c \
+  lib/builtins/divtf3.c \
   lib/builtins/divti3.c \
   lib/builtins/divxc3.c \
-  lib/builtins/enable_execute_stack.c \
   lib/builtins/eprintf.c \
   lib/builtins/extenddftf2.c \
+  lib/builtins/extendhfsf2.c \
   lib/builtins/extendsfdf2.c \
   lib/builtins/extendsftf2.c \
   lib/builtins/ffsdi2.c \
@@ -73,12 +72,18 @@ libcompiler_rt_common_SRC_FILES := \
   lib/builtins/fixsfdi.c \
   lib/builtins/fixsfsi.c \
   lib/builtins/fixsfti.c \
+  lib/builtins/fixtfdi.c \
+  lib/builtins/fixtfsi.c \
+  lib/builtins/fixtfti.c \
   lib/builtins/fixunsdfdi.c \
   lib/builtins/fixunsdfsi.c \
   lib/builtins/fixunsdfti.c \
   lib/builtins/fixunssfdi.c \
   lib/builtins/fixunssfsi.c \
   lib/builtins/fixunssfti.c \
+  lib/builtins/fixunstfdi.c \
+  lib/builtins/fixunstfsi.c \
+  lib/builtins/fixunstfti.c \
   lib/builtins/fixunsxfdi.c \
   lib/builtins/fixunsxfsi.c \
   lib/builtins/fixunsxfti.c \
@@ -147,7 +152,9 @@ libcompiler_rt_common_SRC_FILES := \
   lib/builtins/subvsi3.c \
   lib/builtins/subvti3.c \
   lib/builtins/trampoline_setup.c \
+  lib/builtins/truncdfhf2.c \
   lib/builtins/truncdfsf2.c \
+  lib/builtins/truncsfhf2.c \
   lib/builtins/trunctfdf2.c \
   lib/builtins/trunctfsf2.c \
   lib/builtins/ucmpdi2.c \
@@ -161,6 +168,12 @@ libcompiler_rt_common_SRC_FILES := \
   lib/builtins/umoddi3.c \
   lib/builtins/umodsi3.c \
   lib/builtins/umodti3.c
+
+# Only build enable_execute_stack.c on non-Windows hosts.
+ifneq ($(HOST_OS),windows)
+libcompiler_rt_common_SRC_FILES += \
+  lib/builtins/enable_execute_stack.c
+endif
 
 # ARM-specific runtimes
 libcompiler_rt_arm_SRC_FILES := \
@@ -181,7 +194,42 @@ libcompiler_rt_arm_SRC_FILES := \
   lib/builtins/arm/modsi3.S \
   lib/builtins/arm/udivmodsi4.S \
   lib/builtins/arm/udivsi3.S \
-  lib/builtins/arm/umodsi3.S
+  lib/builtins/arm/umodsi3.S \
+  lib/builtins/arm/adddf3vfp.S \
+  lib/builtins/arm/addsf3vfp.S \
+  lib/builtins/arm/divdf3vfp.S \
+  lib/builtins/arm/divsf3vfp.S \
+  lib/builtins/arm/eqdf2vfp.S \
+  lib/builtins/arm/eqsf2vfp.S \
+  lib/builtins/arm/extendsfdf2vfp.S \
+  lib/builtins/arm/fixdfsivfp.S \
+  lib/builtins/arm/fixsfsivfp.S \
+  lib/builtins/arm/fixunsdfsivfp.S \
+  lib/builtins/arm/fixunssfsivfp.S \
+  lib/builtins/arm/floatsidfvfp.S \
+  lib/builtins/arm/floatsisfvfp.S \
+  lib/builtins/arm/floatunssidfvfp.S \
+  lib/builtins/arm/floatunssisfvfp.S \
+  lib/builtins/arm/gedf2vfp.S \
+  lib/builtins/arm/gesf2vfp.S \
+  lib/builtins/arm/gtdf2vfp.S \
+  lib/builtins/arm/gtsf2vfp.S \
+  lib/builtins/arm/ledf2vfp.S \
+  lib/builtins/arm/lesf2vfp.S \
+  lib/builtins/arm/ltdf2vfp.S \
+  lib/builtins/arm/ltsf2vfp.S \
+  lib/builtins/arm/muldf3vfp.S \
+  lib/builtins/arm/mulsf3vfp.S \
+  lib/builtins/arm/nedf2vfp.S \
+  lib/builtins/arm/negdf2vfp.S \
+  lib/builtins/arm/negsf2vfp.S \
+  lib/builtins/arm/nesf2vfp.S \
+  lib/builtins/arm/subdf3vfp.S \
+  lib/builtins/arm/subsf3vfp.S \
+  lib/builtins/arm/truncdfsf2vfp.S \
+  lib/builtins/arm/unorddf2vfp.S \
+  lib/builtins/arm/unordsf2vfp.S
+
 
 # ARM64-specific runtimes
 libcompiler_rt_arm64_SRC_FILES :=
@@ -261,29 +309,10 @@ define filter-libcompiler-rt-common-source-files
                           $(filter lib/builtins/$(strip $(2))/%.c,$(1))),$(1))
 endef
 
-define get-libcompiler-rt-arm-common-source-files
+define get-libcompiler-rt-arm-source-files
   $(call filter-libcompiler-rt-common-source-files,
       $(libcompiler_rt_common_SRC_FILES) \
       $(libcompiler_rt_arm_SRC_FILES), arm)
-endef
-
-# $(1): common runtime list
-#
-# Add ARM runtimes implemented in VFP
-define add-libcompiler-rt-arm-vfp-source-files
-  $(filter-out $(addprefix lib/builtins/,adddf3.c addsf3.c comparedf2.c comparesf2.c         \
-                                         arm/comparesf2.S divdf3.c divsf3.c extendsfdf2.c    \
-                                         fixdfsi.c fixsfsi.c fixunsdfsi.c fixunssfsi.c       \
-                                         floatsidf.c floatsisf.c floatunsidf.c floatunsisf.c \
-                                         muldf3.c mulsf3.c negdf2.c negsf2.c subdf3.c        \
-                                         subsf3.c truncdfsf2.c),$(1)) lib/builtins/arm/vfp_alias.S
-endef
-
-define get-libcompiler-rt-arm-source-files
-  $(if $(findstring $(ARCH_ARM_HAVE_VFP),true),
-      $(call add-libcompiler-rt-arm-vfp-source-files,
-          $(call get-libcompiler-rt-arm-common-source-files)),
-      $(call get-libcompiler-rt-arm-common-source-files))
 endef
 
 define get-libcompiler-rt-arm64-source-files
@@ -334,8 +363,25 @@ LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_CLANG := true
 LOCAL_SRC_FILES := $(libcompiler_rt_extras_SRC_FILES)
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_SANITIZE := never
+LOCAL_CXX_STL := none
 
 include $(BUILD_STATIC_LIBRARY)
+
+#=====================================================================
+# Host Static Library: libcompiler_rt-extras
+#=====================================================================
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libcompiler_rt-extras
+LOCAL_CLANG := true
+LOCAL_SRC_FILES := $(libcompiler_rt_extras_SRC_FILES)
+LOCAL_SANITIZE := never
+LOCAL_MULTILIB := both
+LOCAL_CXX_STL := none
+
+include $(BUILD_HOST_STATIC_LIBRARY)
 
 # Don't build compiler-rt without clang
 ifneq ($(WITHOUT_TARGET_CLANG), true)
@@ -348,6 +394,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE := libcompiler_rt
 LOCAL_CFLAGS_arm += -D__ARM_EABI__
+LOCAL_CFLAGS_mips64 += -DCRT_HAS_128BIT -DCRT_LDBL_128BIT
 LOCAL_ASFLAGS := -integrated-as
 LOCAL_CLANG := true
 LOCAL_SRC_FILES_arm := $(call get-libcompiler-rt-source-files,arm)
@@ -356,8 +403,11 @@ LOCAL_SRC_FILES_mips := $(call get-libcompiler-rt-source-files,mips)
 LOCAL_SRC_FILES_mips64 := $(call get-libcompiler-rt-source-files,mips64)
 LOCAL_SRC_FILES_x86 := $(call get-libcompiler-rt-source-files,x86)
 LOCAL_SRC_FILES_x86_64 := $(call get-libcompiler-rt-source-files,x86_64)
+LOCAL_SRC_FILES_x86_64 += lib/builtins/ppc/floatditf.c
 LOCAL_MODULE_TARGET_ARCH := arm arm64 mips mips64 x86 x86_64
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+LOCAL_SANITIZE := never
+LOCAL_CXX_STL := none
 
 include $(BUILD_STATIC_LIBRARY)
 
@@ -375,8 +425,24 @@ LOCAL_SRC_FILES := $(call get-libcompiler-rt-source-files,ppc)
 else
 LOCAL_SRC_FILES := $(call get-libcompiler-rt-source-files,x86_64)
 endif
+LOCAL_SANITIZE := never
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 LOCAL_MULTILIB := both
+LOCAL_CXX_STL := none
+
+include $(BUILD_HOST_STATIC_LIBRARY)
+
+#=====================================================================
+# Host Static Library: libprofile_rt
+#=====================================================================
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE = libprofile_rt
+LOCAL_SRC_FILES = lib/profile/GCDAProfiling.c
+LOCAL_SANITIZE := never
+LOCAL_MULTILIB := both
+LOCAL_CXX_STL := none
 
 include $(BUILD_HOST_STATIC_LIBRARY)
 
@@ -387,7 +453,11 @@ include $(BUILD_HOST_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE = libprofile_rt
+LOCAL_CLANG := true
 LOCAL_SRC_FILES = lib/profile/GCDAProfiling.c
+LOCAL_SANITIZE := never
+LOCAL_MULTILIB := both
+LOCAL_CXX_STL := none
 
 include $(BUILD_STATIC_LIBRARY)
 
@@ -400,7 +470,8 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := libcompiler_rt
 LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 LOCAL_WHOLE_STATIC_LIBRARIES := libcompiler_rt
-LOCAL_SHARED_LIBRARIES := libdl
+LOCAL_SHARED_LIBRARIES := libdl liblog
+LOCAL_STATIC_LIBRARIES := liblzma
 LOCAL_STATIC_LIBRARIES_arm := libunwind_llvm
 LOCAL_STATIC_LIBRARIES_arm64 := libunwindbacktrace
 LOCAL_STATIC_LIBRARIES_mips := libunwindbacktrace
@@ -408,11 +479,11 @@ LOCAL_STATIC_LIBRARIES_mips64 := libunwindbacktrace
 LOCAL_STATIC_LIBRARIES_x86 := libunwindbacktrace
 LOCAL_STATIC_LIBRARIES_x86_64 := libunwindbacktrace
 LOCAL_MODULE_TARGET_ARCH := arm arm64 mips mips64 x86 x86_64
+LOCAL_SANITIZE := never
+LOCAL_CXX_STL := none
+LOCAL_NO_LIBGCC := true
 
 include $(BUILD_SHARED_LIBRARY)
-
-# Build ASan
-include $(LOCAL_PATH)/lib/asan/Android.mk
 
 #=====================================================================
 # Host Shared Library: libcompiler_rt
@@ -427,12 +498,18 @@ ifneq ($(HOST_OS),darwin)
 LOCAL_STATIC_LIBRARIES := libunwindbacktrace
 endif
 LOCAL_CPPFLAGS := -nostdinc++
+ifneq ($(HOST_OS),windows)
 LOCAL_LDFLAGS := -nodefaultlibs
 LOCAL_LDLIBS := -lpthread -lc -lm
+endif
 LOCAL_MULTILIB := both
+LOCAL_SANITIZE := never
+LOCAL_CXX_STL := none
+LOCAL_NO_LIBGCC := true
 
 include $(BUILD_HOST_SHARED_LIBRARY)
 
-endif
+# Build asan, lsan, etc.
+include $(call all-makefiles-under,$(LOCAL_PATH)/lib)
 
-endif # TARGET_BUILD_APPS only
+endif
